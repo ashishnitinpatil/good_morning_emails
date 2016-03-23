@@ -5,13 +5,6 @@ import time
 import requests
 
 
-# suppress dirty SSL warnings when using requests
-try:
-    requests.packages.urllib3.disable_warnings()
-except AttributeError:
-    pass
-
-
 def timestamp():
     """Returns YYYY-MM-DD HH:MM:SS formatted UTC timestamp string"""
     return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
