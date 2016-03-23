@@ -43,5 +43,38 @@ def get_dilbert_comic(date="2016-01-01"):
     return comic
 
 
+def get_QOTD():
+    """
+    Fetches QOTD from the REST API of Quotes.rest
+    Output -
+        {
+            success    : True/False,
+            date       : string,
+            quote      : string,
+            author     : string,
+            background : string,
+        }
+    """
+    qotd = {
+        'success' : False,
+        'date' : '',
+        'quote' : '',
+        'author' : '',
+        'background' : '',
+    }
+    response = requests.get("http://quotes.rest/qod.json")
+    print response.status_code, response.content
+    if response.status_code == 200:
+        try:
+            json_response = response.json()['contents']['quotes'][0]
+            for detail in ['date', 'quote', 'author', 'background']:
+                qotd[detail] = json_response[detail].strip()
+            qotd['success'] = True
+        except (AttributeError, KeyError, IndexError):
+            pass
+    return qotd
+
+
 if __name__ == '__main__':
     comic = get_dilbert_comic(date=time.strftime('%Y-%m-%d'))
+    qotd  = get_QOTD()
