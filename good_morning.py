@@ -3,7 +3,16 @@ import os
 import json
 import time
 import requests
+from utilities import *
 from bs4 import BeautifulSoup
+from pprint import pprint, pformat
+
+
+# suppress dirty SSL warnings when using requests
+try:
+    requests.packages.urllib3.disable_warnings()
+except Exception:
+    pass
 
 
 def get_dilbert_comic(date="2016-01-01"):
@@ -29,8 +38,7 @@ def get_dilbert_comic(date="2016-01-01"):
         'title': '',
         'image': '',
     }
-
-    response = requests.get(url)
+    response = requests.get(url, verify=False)
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, "html.parser")
         try:
@@ -62,7 +70,7 @@ def get_QOTD():
         'author' : '',
         'background' : '',
     }
-    response = requests.get("http://quotes.rest/qod.json")
+    response = requests.get("http://quotes.rest/qod.json", verify=False)
     print response.status_code, response.content
     if response.status_code == 200:
         try:
@@ -75,6 +83,66 @@ def get_QOTD():
     return qotd
 
 
+def generate_qotd_html(qotd={}):
+    """Generates part HTML for the qotd supplied"""
+    return """
+    <h3>Quote of the day -</h3>
+    <blockquote>
+        <p style="font:Helvetica;font-size:16px;">{0}</p>
+        <footer>- <cite>{1}</cite></footer>
+    <!-- Attribution to "They Said So" API for the quotes -->
+    <span style="z-index:50;font-size:0.9em;"><img src="https://theysaidso.com/branding/theysaidso.png" height="20" width="20" alt="theysaidso.com"/>
+        <a href="https://theysaidso.com" title="Powered by quotes from theysaidso.com" style="color: #9fcc25; margin-left: 4px; vertical-align: middle;">theysaidso.com</a>
+    </span>
+    </blockquote>
+    """.format(qotd['quote'], qotd['author'])
+
+
+def generate_comic_html(comic={}):
+    """Generates part HTML for the qotd supplied"""
+    return """
+    <h3>Dilbert by Scott Adams -</h3>
+    <a href="{0}"><img alt="{1} - Dilbert by Scott Adams" src="{2}"></a>
+    """.format(comic['url'], comic['title'], comic['image'])
+
+
+def get_email_html(qotd_html="", comic_html=""):
+    """
+    Generates beautiful HTML from the qotd & comic supplied
+    Also includes some default content like attribution, etc.
+    """
+    return """<html>
+    <head></head>
+    <body>
+        <p>Good morning! Here's your daily dose of inspiration & some humour :)</p>
+        {0}<br>
+        {1}<br>
+        <p>Cheers,<br>Team Finomena</p>
+    </body>
+    </html>""".format(qotd_html, comic_html)
+
+
 if __name__ == '__main__':
+    print timestamp()
     comic = get_dilbert_comic(date=time.strftime('%Y-%m-%d'))
+    pprint(comic)
+    comic_html = generate_comic_html(comic) if comic['success'] else ""
     qotd  = get_QOTD()
+    pprint(qotd)
+    qotd_html = generate_qotd_html(qotd) if qotd['success'] else ""
+    if comic['success'] or qotd['success']:
+        send_email(
+            subject='Good morning Finomenans!',
+            html=get_email_html(qotd_html, comic_html),
+            from_id='inspire@finomena.com',
+            recipients=['ashish.patil@8finatics.com',],
+            debug=True,
+        )
+    else:
+        send_email(
+            subject='Good morning email FAILED!',
+            html="QOTD - {0}<br><br>Comic - {1}".format(pformat(qotd),pformat(comic)),
+            from_id='inspire@finomena.com',
+            recipients=['ashish.patil@8finatics.com',],
+            debug=True,
+        )

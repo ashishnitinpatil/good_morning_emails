@@ -4,6 +4,12 @@ import json
 import time
 import requests
 
+# suppress dirty SSL warnings when using requests
+try:
+    requests.packages.urllib3.disable_warnings()
+except Exception:
+    pass
+
 
 def timestamp():
     """Returns YYYY-MM-DD HH:MM:SS formatted UTC timestamp string"""
