@@ -5,6 +5,7 @@ import time
 import requests
 from utilities import *
 from bs4 import BeautifulSoup
+from unidecode import unidecode
 from pprint import pprint, pformat
 
 
@@ -43,7 +44,7 @@ def get_dilbert_comic(date="2016-01-01"):
         soup = BeautifulSoup(response.content, "html.parser")
         try:
             # title is empty at times (e.g. 2016-03-20 comic)
-            comic['title'] = soup.find(attrs={"property":"og:title"})['content']
+            comic['title'] = unidecode(soup.find(attrs={"property":"og:title"})['content'])
             comic['image'] = soup.find(attrs={"property":"og:image"})['content']
             comic['success'] = True
         except (AttributeError, KeyError):
@@ -76,7 +77,7 @@ def get_QOTD():
         try:
             json_response = response.json()['contents']['quotes'][0]
             for detail in ['date', 'quote', 'author', 'background']:
-                qotd[detail] = json_response[detail].strip()
+                qotd[detail] = unidecode(json_response[detail].strip())
             qotd['success'] = True
         except (AttributeError, KeyError, IndexError):
             pass
@@ -116,7 +117,7 @@ def get_email_html(qotd_html="", comic_html=""):
     <body>
         <p>Good morning! Here's your daily dose of inspiration & some humour :)</p>
         {0}<br>
-        {1}<br>
+        {1}<br><br>
         <p>Cheers,<br>Team Finomena</p>
     </body>
     </html>""".format(qotd_html, comic_html)
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     qotd_html = generate_qotd_html(qotd) if qotd['success'] else ""
     if comic['success'] or qotd['success']:
         send_email(
-            subject='Good morning Finomenans!',
+            subject='Good morning!',
             html=get_email_html(qotd_html, comic_html),
             from_id='inspire@finomena.com',
             recipients=['ashish.patil@8finatics.com',],
@@ -146,3 +147,4 @@ if __name__ == '__main__':
             recipients=['ashish.patil@8finatics.com',],
             debug=True,
         )
+
